@@ -10,6 +10,8 @@ PROFILE = default
 PROJECT_NAME = datathon
 PYTHON_INTERPRETER = python3
 
+DATA_SET_TYPE = 'all'
+
 ifeq (,$(shell which conda))
 HAS_CONDA=False
 else
@@ -27,8 +29,14 @@ requirements: test_environment
 
 ## Make Dataset
 data:
-	$(PYTHON_INTERPRETER) src/data/make_dataset.py data/raw data/processed
+	$(PYTHON_INTERPRETER) src/data/make_dataset.py \
+					--input_filepath data/raw \
+					--output_filepath data/processed \
+					--data_set_type $(DATA_SET_TYPE)
 
+## Run Experiments
+run_experiments:
+	$(PYTHON_INTERPRETER) src/experiments/experiments.py
 ## Delete all compiled Python files
 clean:
 	find . -type f -name "*.py[co]" -delete

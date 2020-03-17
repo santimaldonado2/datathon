@@ -1,7 +1,8 @@
 from imblearn.pipeline import Pipeline
 from sklearn.ensemble import GradientBoostingClassifier
 
-from src.features.features import get_features, ImbalanceTransformer
+from src.constants import NOT_TRANSFORMED_COLUMNS
+from src.features.features import get_features, ImbalanceTransformer, ScalerTransformer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (accuracy_score, balanced_accuracy_score, f1_score, precision_score, recall_score)
 import pickle
@@ -27,6 +28,7 @@ class SoilClassifier:
     def fit(self, X_train, y_train):
         steps = []
 
+        steps.append(['scaler', ScalerTransformer(NOT_TRANSFORMED_COLUMNS)])
         steps.append(('features', get_features(self.feature_names)))
         steps.append(('sampler', ImbalanceTransformer(self.min_samples, self.max_samples)))
         steps.append(('classifier', MODELS_BY_NAME[self.classifier]))
@@ -44,6 +46,7 @@ class SoilClassifier:
     def calculate_metrics(self, y_true, y_pred):
         return {
             'accuracy': accuracy_score(y_true, y_pred),
+            'custom_accuracy': self.custom_accuracy_score(y_true, y_pred),
             'balanced_accuracy': balanced_accuracy_score(y_true, y_pred),
             'precision_macro': precision_score(y_true, y_pred, average='macro'),
             'precision_weighted': precision_score(y_true, y_pred, average='weighted'),
@@ -53,7 +56,7 @@ class SoilClassifier:
             'f1_weighted': f1_score(y_true, y_pred, average='weighted'),
         }
 
-    def evaluate(self, X_test,y_test):
+    def evaluate(self, X_test, y_test):
         test_predictions = self.predict(X_test)
         self.metrics['test'] = self.calculate_metrics(y_test, test_predictions)
 
@@ -88,5 +91,14 @@ class SoilClassifier:
         self.max_samples = model_json['max_samples']
         self.pipeline = model_json['pipeline']
 
+    def _get_weights(self, target):
+        if target == 'RESIDENTIAL':
+            return 0.12
+        if target == 'AGRICULTURE':
+            return 2
+        else:
+            return 1
 
-
+    def custom_accuracy_score(self, y_true, y_pred):
+        weights = y_true.apply(self._get_weights)
+        return ((y_true == y_pred) * weights).sum() / weights.sum()

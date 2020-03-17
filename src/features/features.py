@@ -1,17 +1,18 @@
+import logging
+
 from imblearn.base import BaseSampler
 from imblearn.over_sampling import SMOTE
-from imblearn.over_sampling.base import BaseOverSampler
 from imblearn.under_sampling import RandomUnderSampler
-from imblearn.under_sampling.base import BaseUnderSampler
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline, FeatureUnion
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from src.constants import QUAD, NOT_TRANSFORMED_COLUMNS, LOG_TRANSFORMATION, COORDINATES, CADASTRAL_QUALITY, \
     CADASTRAL_QUALITY_ORDER, AREA, BUILDING_YEAR
 import pandas as pd
 import math
 
+logger = logging.getLogger(__name__)
 
 class NumericTransformer(BaseEstimator, TransformerMixin):
 
@@ -101,7 +102,7 @@ class CustomOrdinalEncoder(BaseEstimator, TransformerMixin):
 
     def get_element_index(self, element, args):
         if element and element in args:
-            return args.index(element)
+            return args.index(element) / len(args)
         else:
             return self.na_value
 
@@ -242,10 +243,35 @@ class ImbalanceTransformer(BaseSampler):
         return self.over_sampler.fit_resample(X_und, y_und)
 
     def fit_resample(self, X, y):
-        return self._fit_resample(X,y)
+        return self._fit_resample(X, y)
 
     def get_feature_names(self):
         return self.feature_names
+
+
+class ScalerTransformer(BaseEstimator, TransformerMixin):
+
+    def __init__(self, keys):
+        self.keys = keys
+        self.pipeline = None
+
+    def fit(self, X, y=None):
+        self.pipeline = Pipeline([
+            ('selector', DataFrameIndexSelector(self.keys)),
+            ('scaler', StandardScaler())
+        ])
+
+        self.pipeline.fit(X,y)
+        return self
+
+    def transform(self, X, y=None):
+        X_copy = X.copy()
+        X_transformed = self.pipeline.transform(X_copy)
+        X_copy[self.keys] = X_transformed
+        return X_copy
+
+    def get_feature_names(self):
+        self.pipeline.named_steps['selector'].get_feature_names()
 
 
 FEATURES_BY_NAME = {
@@ -256,10 +282,6 @@ FEATURES_BY_NAME = {
     'cadastral_ordinal_encoder': CustomOrdinalEncoder(keys=[CADASTRAL_QUALITY],
                                                       category_orders=[CADASTRAL_QUALITY_ORDER]),
     'log_area': NumericTransformer(keys=[AREA], transformation=LOG_TRANSFORMATION, add_log_value=1),
-    'building_year_decades': IntervalCategoricalTransformer(keys=[BUILDING_YEAR],
-                                                            intervals=[list(range(1950, 2020, 10))],
-                                                            feat_name=BUILDING_YEAR),
-    'building_antiquity_log': LogAntiquityTransformer(keys=[BUILDING_YEAR])
 }
 
 
@@ -269,6 +291,7 @@ def get_features(feature_names=None):
 
     feature_names = [f for f in feature_names if isinstance(f, str)]
     if any(name not in FEATURES_BY_NAME for name in feature_names):
+        logger.error(str([name for name in feature_names if name not in FEATURES_BY_NAME.keys()]))
         raise KeyError('Possible Keys are: {}'.format(sorted(FEATURES_BY_NAME.keys())))
 
     feature_transformers = [(name, FEATURES_BY_NAME[name]) for name in feature_names]

@@ -17,30 +17,21 @@ def main():
 
     feature_options = [
         ('base', ['not_transformed']),
-        ('1', ['not_trasnfromed', 'squared_coordinates', 'cadastral_ordinal_encoder_onehot', 'log_area',
-               'building_year_decades']),
-        ('2', ['not_trasnfromed', 'squared_coordinates', 'cadastral_ordinal_encoder', 'log_area',
-               'building_year_decades']),
-        ('3', ['not_trasnfromed', 'squared_coordinates', 'cadastral_ordinal_encoder_onehot', 'log_area',
-               'building_antiquity_log']),
-        ('4', ['not_trasnfromed', 'squared_coordinates', 'cadastral_ordinal_encoder', 'log_area',
-               'building_antiquity_log']),
-        ('5', ['not_trasnfromed', 'cadastral_ordinal_encoder_onehot', 'log_area',
-               'building_year_decades']),
-        ('6', ['not_trasnfromed', 'cadastral_ordinal_encoder', 'log_area',
-               'building_year_decades']),
-        ('7', ['not_trasnfromed', 'cadastral_ordinal_encoder_onehot', 'log_area',
-               'building_antiquity_log']),
-        ('8', ['not_trasnfromed', 'cadastral_ordinal_encoder', 'log_area',
-               'building_antiquity_log']),
+        ('1', ['not_transformed', 'squared_coordinates', 'cadastral_ordinal_encoder_onehot', 'log_area']),
+        ('2', ['not_transformed', 'squared_coordinates', 'cadastral_ordinal_encoder', 'log_area']),
+        ('3', ['not_transformed', 'squared_coordinates', 'cadastral_ordinal_encoder_onehot']),
+        ('4', ['not_transformed', 'squared_coordinates', 'cadastral_ordinal_encoder']),
+        ('5', ['not_transformed', 'squared_coordinates', 'log_area']),
+        ('6', ['not_transformed', 'log_area']),
+        ('7', ['not_transformed', 'squared_coordinates']),
         ('all', None),
     ]
 
     classifier_options = ['logistic_regression', 'gradient_boosting']
 
-    min_samples_options = [500, 1000, 2000]
+    min_samples_options = [500, 1000]
 
-    max_samples_options = [5000, 6000, 7000, 8000, 1000]
+    max_samples_options = [5000, 9000]
 
     data_type_options = ['balanced', 'imbalanced']
 
@@ -63,32 +54,32 @@ def run_experiment(features, features_comb_id, classifier, min_samples, max_samp
         'Running Experiment data_type = {data_type} features={features_comb_id} classifier={classifier} samples=[{min_samples},{max_samples}]'.format(
             data_type=data_type, features_comb_id=features_comb_id, classifier=classifier, min_samples=min_samples,
             max_samples=max_samples))
-    try:
-        df_train = pd.read_csv(os.path.join('data/processed', 'train_data_{}.csv'.format(data_type)))
-        df_test = pd.read_csv(os.path.join('data/processed', 'test_data_{}.csv'.format(data_type)))
 
-        model = SoilClassifier(feature_names=features,
-                               classifier=classifier,
-                               min_samples=min_samples,
-                               max_samples=max_samples)
+    df_train = pd.read_csv(os.path.join('data/processed', 'train_data_{}.csv'.format(data_type)))
+    df_test = pd.read_csv(os.path.join('data/processed', 'test_data_{}.csv'.format(data_type)))
 
-        model.fit(df_train, df_train[TARGET_FEATURE])
-        model.evaluate(df_test, df_test[TARGET_FEATURE])
+    model = SoilClassifier(feature_names=features,
+                           classifier=classifier,
+                           min_samples=min_samples,
+                           max_samples=max_samples)
 
-        model.dump(
-            'src/experiments/results/{data_type}_{features_comb_id}_{classifier}_{min_samples}_{max_samples}.pkl'.format(
-                data_type=data_type,
-                features_comb_id=features_comb_id,
-                classifier=classifier,
-                min_samples=min_samples,
-                max_samples=max_samples
-            ))
-    except Exception:
-        logger.error(
-            '''Exception Running Experiment data_type = {data_type} 
-            features={features_comb_id} classifier={classifier} samples=[{min_samples},{max_samples}]'''.format(
-                data_type=data_type, features_comb_id=features[0], classifier=classifier, min_samples=min_samples,
-                max_samples=max_samples))
+    model.fit(df_train, df_train[TARGET_FEATURE])
+    model.evaluate(df_test, df_test[TARGET_FEATURE])
+
+    model.dump(
+        'src/experiments/results/{data_type}_{features_comb_id}_{classifier}_{min_samples}_{max_samples}_scaled.pkl'.format(
+            data_type=data_type,
+            features_comb_id=features_comb_id,
+            classifier=classifier,
+            min_samples=min_samples,
+            max_samples=max_samples
+        ))
+    # except Exception:
+    #     logger.error(
+    #         '''Exception Running Experiment data_type = {data_type}
+    #         features={features_comb_id} classifier={classifier} samples=[{min_samples},{max_samples}]'''.format(
+    #             data_type=data_type, features_comb_id=features[0], classifier=classifier, min_samples=min_samples,
+    #             max_samples=max_samples))
 
 
 if __name__ == '__main__':

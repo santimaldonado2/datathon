@@ -1,10 +1,12 @@
 from imblearn.pipeline import Pipeline
+from sklearn import clone
 from sklearn.ensemble import GradientBoostingClassifier
 
 from src.constants import NOT_TRANSFORMED_COLUMNS
 from src.features.features import get_features, ImbalanceTransformer, ScalerTransformer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (accuracy_score, balanced_accuracy_score, f1_score, precision_score, recall_score)
+import pandas as pd
 import pickle
 import json
 
@@ -98,6 +100,21 @@ class SoilClassifier:
             return 2
         else:
             return 1
+
+    def get_feature_importances(self):
+        feature_names = self.pipeline.named_steps['features'].get_feature_names()
+        feature_importances = self.pipeline.named_steps['classifier'].feature_importances_
+
+        return pd.DataFrame({
+            'feature': feature_names,
+            'importance': feature_importances
+        })
+
+    def get_preprocessing_pipeline(self):
+        pipeline = clone(self.pipeline)
+        pipeline.pop(1)
+        return pipeline
+
 
     def custom_accuracy_score(self, y_true, y_pred):
         weights = y_true.apply(self._get_weights)

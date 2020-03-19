@@ -8,11 +8,12 @@ from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from src.constants import QUAD, NOT_TRANSFORMED_COLUMNS, LOG_TRANSFORMATION, COORDINATES, CADASTRAL_QUALITY, \
-    CADASTRAL_QUALITY_ORDER, AREA, BUILDING_YEAR
+    CADASTRAL_QUALITY_ORDER, AREA, BUILDING_YEAR, B8, B4, SAVI_L, SAVI, PSSR, B2, EVI, EVI2, GEOMS
 import pandas as pd
 import math
 
 logger = logging.getLogger(__name__)
+
 
 class NumericTransformer(BaseEstimator, TransformerMixin):
 
@@ -231,7 +232,8 @@ class ImbalanceTransformer(BaseSampler):
         self.dist_dict = None
 
     def _fit_resample(self, X, y):
-        dist_dict = y.value_counts().to_dict()
+        y_prov = pd.Series(y)
+        dist_dict = y_prov.value_counts().to_dict()
 
         under_sampler_dict = {key: min(self.max_samples, dist_dict[key]) for key in dist_dict}
         over_sampler_dict = {key: max(self.min_samples, under_sampler_dict[key]) for key in under_sampler_dict}
@@ -261,7 +263,7 @@ class ScalerTransformer(BaseEstimator, TransformerMixin):
             ('scaler', StandardScaler())
         ])
 
-        self.pipeline.fit(X,y)
+        self.pipeline.fit(X, y)
         return self
 
     def transform(self, X, y=None):
@@ -274,14 +276,91 @@ class ScalerTransformer(BaseEstimator, TransformerMixin):
         self.pipeline.named_steps['selector'].get_feature_names()
 
 
+class SAVIITransformer(BaseEstimator, TransformerMixin):
+    """Create Soil Adjusted Vegetarian Index
+       https://github.com/sentinel-hub/custom-scripts/blob/master/sentinel-2/savi/script.js
+    """
+
+    def fit(self, x, y=None):
+        return self
+
+    def transform(self, X):
+        X_transformed = pd.DataFrame()
+        X_transformed[SAVI] = (X[B8] - X[B4]) / (X[B8] + X[B4] + SAVI_L) * (1.0 + SAVI_L)
+
+        return X_transformed
+
+    def get_feature_names(self):
+        return [SAVI]
+
+
+class PSSRITransformer(BaseEstimator, TransformerMixin):
+    """Create Pigment Specific Simple Ratio Index
+       https://github.com/sentinel-hub/custom-scripts/blob/master/sentinel-2/pssrb1/script.js
+    """
+
+    def fit(self, x, y=None):
+        return self
+
+    def transform(self, X):
+        X_transformed = pd.DataFrame()
+        X_transformed[PSSR] = (X[B8] / X[B4])
+
+        return X_transformed
+
+    def get_feature_names(self):
+        return [PSSR]
+
+
+class EVITransformer(BaseEstimator, TransformerMixin):
+    """Create Enhanced Vegetation Index
+       https://github.com/sentinel-hub/custom-scripts/blob/master/sentinel-2/evi/script.js
+    """
+
+    def fit(self, x, y=None):
+        return self
+
+    def transform(self, X):
+        X_transformed = pd.DataFrame()
+        X_transformed[EVI] = 2.5 * (X[B8] - X[B4]) / (X[B8] + 6. * X[B4] - 7.5 * X[B2])
+
+        return X_transformed
+
+    def get_feature_names(self):
+        return [EVI]
+
+
+class EVI2Transformer(BaseEstimator, TransformerMixin):
+    """Create Enhanced Vegetation Index 2
+       https://github.com/sentinel-hub/custom-scripts/blob/master/sentinel-2/evi2/script.js
+    """
+
+    def fit(self, x, y=None):
+        return self
+
+    def transform(self, X):
+        X_transformed = pd.DataFrame()
+        X_transformed[EVI2] = 2.4 * (X[B8] - X[B4]) / (X[B8] + X[B4] + 1)
+
+        return X_transformed
+
+    def get_feature_names(self):
+        return [EVI2]
+
+
 FEATURES_BY_NAME = {
     'not_transformed': DataFrameIndexSelector(keys=NOT_TRANSFORMED_COLUMNS),
     'squared_coordinates': NumericTransformer(keys=COORDINATES, transformation=QUAD),
     'cadastral_ordinal_encoder_onehot': OneHotOrdinalEncoder(keys=[CADASTRAL_QUALITY],
                                                              category_orders=[CADASTRAL_QUALITY_ORDER]),
-    'cadastral_ordinal_encoder': CustomOrdinalEncoder(keys=[CADASTRAL_QUALITY],
-                                                      category_orders=[CADASTRAL_QUALITY_ORDER]),
+    # 'cadastral_ordinal_encoder': CustomOrdinalEncoder(keys=[CADASTRAL_QUALITY],
+    #                                                   category_orders=[CADASTRAL_QUALITY_ORDER]),
     'log_area': NumericTransformer(keys=[AREA], transformation=LOG_TRANSFORMATION, add_log_value=1),
+    'savi': SAVIITransformer(),
+    'pssr': PSSRITransformer(),
+    'evi': EVITransformer(),
+    'evi2': EVI2Transformer(),
+    'squared_geoms': NumericTransformer(keys=GEOMS, transformation=QUAD),
 }
 
 

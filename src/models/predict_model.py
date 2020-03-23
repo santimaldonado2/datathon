@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Get Model Predictions"""
 import logging
 import os
 from pathlib import Path
@@ -15,9 +16,8 @@ from src.models.model import SoilClassifier
 @click.option('--input_filepath', type=click.Path(exists=True))
 @click.option('--model_file_name', type=str)
 def main(input_filepath, model_file_name):
-    """ Train the model with the whole "Modelar" file and put the trained model into
-        models folder
-    """
+    """ Loads a model and predicts the input file """
+
     logger = logging.getLogger(__name__)
     logger.info('Predicting')
 

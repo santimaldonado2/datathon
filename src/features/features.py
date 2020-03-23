@@ -1,3 +1,8 @@
+""" Features File
+This file contains all the Feature Transformers. Also implements the get_features that allows to
+ask for some features and get the final Feature Union Transformer
+"""
+
 import logging
 import math
 
@@ -17,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class NumericTransformer(BaseEstimator, TransformerMixin):
+    """Apply some numeric transformation to selected columns"""
 
     def __init__(self, keys, transformation, add_log_value=0):
         self.keys = keys
@@ -45,6 +51,7 @@ class NumericTransformer(BaseEstimator, TransformerMixin):
 
 
 class DataFrameIndexSelector(BaseEstimator, TransformerMixin):
+    """Returns a DataFrame with the selected columns"""
 
     def __init__(self, keys):
         self.keys = keys
@@ -63,6 +70,22 @@ class DataFrameIndexSelector(BaseEstimator, TransformerMixin):
 
 
 class OneHotOrdinalEncoder(BaseEstimator, TransformerMixin):
+    """Applies a One Hot encoding but instead of returning a vector of
+       zeros and a one into the desired column, it returns a vector of
+       ones until the desired columns.
+       Example:
+           Clases = ["A", "B", "C"]
+           Order = A > B > C
+
+           Traditional One Hot Encoding:
+                A = [1, 0, 0]
+                B = [0, 1, 0]
+                C = [0, 0, 1]
+            One Hot Ordinal Encoding:
+                A = [1, 1, 1]
+                B = [0, 1, 1]
+                C = [0, 0, 1]
+       """
 
     def __init__(self, keys, category_orders, drop_first=False):
         self.keys = keys
@@ -92,6 +115,8 @@ class OneHotOrdinalEncoder(BaseEstimator, TransformerMixin):
 
 
 class CustomOrdinalEncoder(BaseEstimator, TransformerMixin):
+    """ Returns a float column with 0 for the lowest class, 1 for the highest
+    and intermediate ordered values for the rest of the classes."""
 
     def __init__(self, keys, category_orders, na_value=-1):
         self.keys = keys
@@ -120,6 +145,7 @@ class CustomOrdinalEncoder(BaseEstimator, TransformerMixin):
 
 
 class IntervalTransformer(BaseEstimator, TransformerMixin):
+    """ Returns a column with a categorical feature corresponding to some interval"""
 
     def __init__(self, keys, intervals):
         self.keys = keys
@@ -152,6 +178,7 @@ class IntervalTransformer(BaseEstimator, TransformerMixin):
 
 
 class IntervalCategoricalTransformer(BaseEstimator, TransformerMixin):
+    """Transfoms the data to get a one hot encoded variable for each interval"""
 
     def __init__(self, keys, intervals, feat_name):
         self.keys = keys
@@ -176,6 +203,7 @@ class IntervalCategoricalTransformer(BaseEstimator, TransformerMixin):
 
 
 class AntiquityTransformer(BaseEstimator, TransformerMixin):
+    """ Transforms a year variable into antiquity"""
 
     def __init__(self, keys, current_year=2020):
         self.keys = keys
@@ -198,6 +226,7 @@ class AntiquityTransformer(BaseEstimator, TransformerMixin):
 
 
 class LogAntiquityTransformer(BaseEstimator, TransformerMixin):
+    """Transforms a year variable into the log of the antiquity."""
 
     def __init__(self, keys, add_log_value=1, current_year=2020):
         self.keys = keys
@@ -223,6 +252,10 @@ class LogAntiquityTransformer(BaseEstimator, TransformerMixin):
 
 
 class ImbalanceTransformer(BaseSampler):
+    """Transforms the input data by sampling it in order to balance it.
+       If a class has more than "max_samples" it under sample it with a RandomUnderSampler.
+       If a class has less tha  "min_samples" it over sample it with a SMOTE sampler.
+    """
 
     def __init__(self, min_samples, max_samples):
         self.min_samples = min_samples
@@ -253,6 +286,7 @@ class ImbalanceTransformer(BaseSampler):
 
 
 class ScalerTransformer(BaseEstimator, TransformerMixin):
+    """Transforms selected columns into scaled data."""
 
     def __init__(self, keys):
         self.keys = keys
@@ -354,8 +388,8 @@ FEATURES_BY_NAME = {
     'squared_coordinates': NumericTransformer(keys=COORDINATES, transformation=QUAD),
     'cadastral_ordinal_encoder_onehot': OneHotOrdinalEncoder(keys=[CADASTRAL_QUALITY],
                                                              category_orders=[CADASTRAL_QUALITY_ORDER]),
-    # 'cadastral_ordinal_encoder': CustomOrdinalEncoder(keys=[CADASTRAL_QUALITY],
-    #                                                   category_orders=[CADASTRAL_QUALITY_ORDER]),
+    'cadastral_ordinal_encoder': CustomOrdinalEncoder(keys=[CADASTRAL_QUALITY],
+                                                      category_orders=[CADASTRAL_QUALITY_ORDER]),
     'log_area': NumericTransformer(keys=[AREA], transformation=LOG_TRANSFORMATION, add_log_value=1),
     'log_antiquity': LogAntiquityTransformer(keys=[BUILDING_YEAR]),
     'savi': SAVIITransformer(),
@@ -368,6 +402,7 @@ FEATURES_BY_NAME = {
 
 
 def get_features(feature_names=None):
+    """Returns a Feature Union Transformer with all the desired transformers."""
     if not feature_names:
         feature_names = FEATURES_BY_NAME.keys()
 

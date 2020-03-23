@@ -1,7 +1,16 @@
+"""
+File to Execute Model Comparisons. It Run a grid search over several classifiers and save a
+DataFrame with metrics for the best classifier
+"""
+
 import logging
 
 import click
 import pandas as pd
+from scipy.stats import randint, uniform
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.linear_model import RidgeClassifier
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.svm import SVC
@@ -19,34 +28,34 @@ def main():
     data = (X_train, y_train, X_test, y_test)
 
     models = [
-        # ('gradient_boosting', GradientBoostingClassifier(n_iter_no_change=10), {
-        #     'n_estimators': randint(low=50, high=52),
-        #     'subsample': uniform(loc=0.5, scale=0.5),
-        #     'min_samples_split': randint(low=2, high=6),
-        #     'max_depth': randint(low=3, high=8),
-        #     'max_features': ['sqrt', None]
-        # }),
+        ('gradient_boosting', GradientBoostingClassifier(n_iter_no_change=10), {
+            'n_estimators': randint(low=50, high=52),
+            'subsample': uniform(loc=0.5, scale=0.5),
+            'min_samples_split': randint(low=2, high=6),
+            'max_depth': randint(low=3, high=8),
+            'max_features': ['sqrt', None]
+        }),
         ('support_vector_machine', SVC(), {
             'C': [1, 10, 100, 1000],
             'gamma': [1e-1, 1e-2, 1e-3, 1e-4],
             'kernel': ['linear', 'rbf']
         }),
-        # ('ridge', RidgeClassifier(normalize=False), {
-        #     'alpha': [1, 10, 100],
-        #     'solver': ['svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga']
-        #
-        # }),
-        # ('lda', LinearDiscriminantAnalysis(), {
-        #     'shrinkage': uniform(loc=0, scale=1),
-        #     'solver': ['svd', 'lsqr', 'eigen']
-        #
-        # }),
-        # ('random_forest', RandomForestClassifier(), {
-        #     'n_estimators': randint(low=50, high=52),
-        #     'min_samples_split': randint(low=2, high=6),
-        #     'max_depth': randint(low=3, high=8),
-        #     'max_features': ['sqrt', None]
-        # }),
+        ('ridge', RidgeClassifier(normalize=False), {
+            'alpha': [1, 10, 100],
+            'solver': ['svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga']
+
+        }),
+        ('lda', LinearDiscriminantAnalysis(), {
+            'shrinkage': uniform(loc=0, scale=1),
+            'solver': ['svd', 'lsqr', 'eigen']
+
+        }),
+        ('random_forest', RandomForestClassifier(), {
+            'n_estimators': randint(low=50, high=52),
+            'min_samples_split': randint(low=2, high=6),
+            'max_depth': randint(low=3, high=8),
+            'max_features': ['sqrt', None]
+        }),
 
     ]
 

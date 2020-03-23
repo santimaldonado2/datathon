@@ -1,3 +1,5 @@
+""" Class that implements the whole pipeline in order to train and get the final predictions"""
+
 from imblearn.pipeline import Pipeline
 from sklearn import clone
 from sklearn.ensemble import GradientBoostingClassifier

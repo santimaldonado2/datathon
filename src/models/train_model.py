@@ -15,9 +15,8 @@ from src.models.model import SoilClassifier
 @click.option('--input_filepath', type=click.Path(exists=True))
 @click.option('--model_file_name', type=str)
 def main(input_filepath, model_file_name):
-    """ Train the model with the whole "Modelar" file and put the trained model into
-        models folder
-    """
+    """Trains  a model and dumps it."""
+
     logger = logging.getLogger(__name__)
     logger.info('Training Model')
 

@@ -1,9 +1,9 @@
 from imblearn.pipeline import Pipeline
 from sklearn import clone
 from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.preprocessing import MinMaxScaler
 
-from src.constants import NOT_TRANSFORMED_COLUMNS
-from src.features.features import get_features, ImbalanceTransformer, ScalerTransformer
+from src.features.features import get_features, ImbalanceTransformer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (accuracy_score, balanced_accuracy_score, f1_score, precision_score, recall_score)
 import pandas as pd
@@ -12,7 +12,11 @@ import json
 
 MODELS_BY_NAME = {
     'logistic_regression': LogisticRegression(),
-    'gradient_boosting': GradientBoostingClassifier()
+    'gradient_boosting': GradientBoostingClassifier(max_depth=7,
+                                                    max_features=None,
+                                                    min_samples_split=4,
+                                                    n_estimators=51,
+                                                    subsample=0.7270942636108306)
 }
 
 
@@ -30,8 +34,8 @@ class SoilClassifier:
     def fit(self, X_train, y_train):
         steps = []
 
-        steps.append(['scaler', ScalerTransformer(NOT_TRANSFORMED_COLUMNS)])
         steps.append(('features', get_features(self.feature_names)))
+        steps.append(['scaler', MinMaxScaler()])
         steps.append(('sampler', ImbalanceTransformer(self.min_samples, self.max_samples)))
         steps.append(('classifier', MODELS_BY_NAME[self.classifier]))
 
@@ -108,13 +112,12 @@ class SoilClassifier:
         return pd.DataFrame({
             'feature': feature_names,
             'importance': feature_importances
-        })
+        }).sort_values('importance', ascending=False)
 
     def get_preprocessing_pipeline(self):
         pipeline = clone(self.pipeline)
         pipeline.pop(1)
         return pipeline
-
 
     def custom_accuracy_score(self, y_true, y_pred):
         weights = y_true.apply(self._get_weights)

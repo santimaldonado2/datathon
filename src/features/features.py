@@ -1,5 +1,7 @@
 import logging
+import math
 
+import pandas as pd
 from imblearn.base import BaseSampler
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
@@ -8,9 +10,8 @@ from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from src.constants import QUAD, NOT_TRANSFORMED_COLUMNS, LOG_TRANSFORMATION, COORDINATES, CADASTRAL_QUALITY, \
-    CADASTRAL_QUALITY_ORDER, AREA, BUILDING_YEAR, B8, B4, SAVI_L, SAVI, PSSR, B2, EVI, EVI2, GEOMS
-import pandas as pd
-import math
+    CADASTRAL_QUALITY_ORDER, AREA, BUILDING_YEAR, B8, B4, SAVI_L, SAVI, PSSR, B2, EVI, EVI2, GEOMS, \
+    NOT_CORRELATED_FEATURES
 
 logger = logging.getLogger(__name__)
 
@@ -231,7 +232,7 @@ class ImbalanceTransformer(BaseSampler):
         self.feature_names = None
         self.dist_dict = None
 
-    def _fit_resample(self, X, y):
+    def _fit_resample(self, X, y=None):
         y_prov = pd.Series(y)
         dist_dict = y_prov.value_counts().to_dict()
 
@@ -244,7 +245,7 @@ class ImbalanceTransformer(BaseSampler):
         self.over_sampler = SMOTE(sampling_strategy=over_sampler_dict)
         return self.over_sampler.fit_resample(X_und, y_und)
 
-    def fit_resample(self, X, y):
+    def fit_resample(self, X, y=None):
         return self._fit_resample(X, y)
 
     def get_feature_names(self):
@@ -356,11 +357,13 @@ FEATURES_BY_NAME = {
     # 'cadastral_ordinal_encoder': CustomOrdinalEncoder(keys=[CADASTRAL_QUALITY],
     #                                                   category_orders=[CADASTRAL_QUALITY_ORDER]),
     'log_area': NumericTransformer(keys=[AREA], transformation=LOG_TRANSFORMATION, add_log_value=1),
+    'log_antiquity': LogAntiquityTransformer(keys=[BUILDING_YEAR]),
     'savi': SAVIITransformer(),
     'pssr': PSSRITransformer(),
     'evi': EVITransformer(),
     'evi2': EVI2Transformer(),
     'squared_geoms': NumericTransformer(keys=GEOMS, transformation=QUAD),
+    'not_correlated': DataFrameIndexSelector(keys=NOT_CORRELATED_FEATURES)
 }
 
 

@@ -32,9 +32,8 @@ DATA_FILE_NAMES_IMBALANCED = {
 
 # Numeric Transfromation
 SQRT = 'sqrt'
-LOG_TRANSFORMATION= 'log'
+LOG_TRANSFORMATION = 'log'
 QUAD = 'quad'
-
 
 # Cadastral Quality Order
 CADASTRAL_QUALITY_ORDER = ['9', '8', '7', '6', '5', '4', '3', '2', '1', 'C', 'B', 'A']
@@ -94,6 +93,28 @@ NOT_TRANSFORMED_COLUMNS = [
     'CONTRUCTIONYEAR',
 ]
 
+NOT_CORRELATED_FEATURES = [
+    'X',
+    'Y',
+    'Q_R_4_0_1',
+    'Q_R_4_0_5',
+    'Q_R_4_1_0',
+    'Q_G_3_0_1',
+    'Q_G_3_0_5',
+    'Q_G_3_1_0',
+    'Q_B_2_0_1',
+    'Q_B_2_0_5',
+    'Q_B_2_1_0',
+    'Q_NIR_8_0_1',
+    'Q_NIR_8_0_5',
+    'Q_NIR_8_1_0',
+    'GEOM_R1',
+    'GEOM_R2',
+    'GEOM_R3',
+    'GEOM_R4',
+    'CONTRUCTIONYEAR',
+]
+
 # SENTINEL INDEXES
 B8 = 'Q_NIR_8_0_5'
 B4 = 'Q_R_4_0_5'
@@ -105,11 +126,7 @@ PSSR = 'PSSR'
 EVI = 'EVI'
 EVI2 = 'EVI2'
 
-
 SAVI_L = 0.483
-
-
-
 
 TARGET_FEATURE = 'CLASE'
 COORDINATES = ['X', 'Y']
@@ -117,3 +134,6 @@ GEOMS = ['GEOM_R1', 'GEOM_R2', 'GEOM_R3', 'GEOM_R4']
 CADASTRAL_QUALITY = 'CADASTRALQUALITYID'
 AREA = 'AREA'
 BUILDING_YEAR = 'CONTRUCTIONYEAR'
+ID = 'ID'
+
+COLUMNS_TO_DUMP = [ID, TARGET_FEATURE]

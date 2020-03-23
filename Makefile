@@ -11,6 +11,9 @@ PROJECT_NAME = datathon
 PYTHON_INTERPRETER = python3
 
 DATA_SET_TYPE = 'all'
+TRAIN_DATA_SET = 'data/raw/Modelar_UH2020.txt'
+PREDICT_DATA_SET = 'data/raw/Estimar_UH2020.txt'
+MODEL_NAME = '01_entrega_25_03_v1'
 
 ifeq (,$(shell which conda))
 HAS_CONDA=False
@@ -37,6 +40,26 @@ data:
 ## Run Experiments
 run_experiments:
 	$(PYTHON_INTERPRETER) src/experiments/experiments.py
+
+
+## Run Classifier Comparison
+run_classifier_comparisons:
+	$(PYTHON_INTERPRETER) src/experiments/classifierComparisons.py
+
+## Train Model
+train_model:
+	$(PYTHON_INTERPRETER) src/models/train_model.py \
+					--input_filepath $(TRAIN_DATA_SET) \
+					--model_file_name $(MODEL_NAME) \
+
+## Predict
+predict:
+	$(PYTHON_INTERPRETER) src/models/predict_model.py \
+					--input_filepath $(PREDICT_DATA_SET) \
+					--model_file_name $(MODEL_NAME) \
+
+## Train and Predict
+train_and_predict: train_model predict
 ## Delete all compiled Python files
 clean:
 	find . -type f -name "*.py[co]" -delete
@@ -46,21 +69,6 @@ clean:
 lint:
 	flake8 src
 
-## Upload Data to S3
-sync_data_to_s3:
-ifeq (default,$(PROFILE))
-	aws s3 sync data/ s3://$(BUCKET)/data/
-else
-	aws s3 sync data/ s3://$(BUCKET)/data/ --profile $(PROFILE)
-endif
-
-## Download Data from S3
-sync_data_from_s3:
-ifeq (default,$(PROFILE))
-	aws s3 sync s3://$(BUCKET)/data/ data/
-else
-	aws s3 sync s3://$(BUCKET)/data/ data/ --profile $(PROFILE)
-endif
 
 ## Set up python interpreter environment
 create_environment:

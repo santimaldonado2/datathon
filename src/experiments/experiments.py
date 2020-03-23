@@ -1,14 +1,14 @@
+import logging
+import os
 from pathlib import Path
 
 import click
-import logging
-
+import pandas as pd
 from dotenv import load_dotenv, find_dotenv
 
 from src.constants import TARGET_FEATURE
 from src.models.model import SoilClassifier
-import pandas as pd
-import os
+
 
 @click.command()
 def main():
@@ -16,47 +16,37 @@ def main():
     logger.info('Running Experiments')
 
     feature_options = [
-        ('base', ['not_transformed']),
-        ('1', ['not_transformed', 'squared_coordinates', 'cadastral_ordinal_encoder_onehot', 'log_area']),
-        ('2', ['not_transformed', 'squared_coordinates', 'cadastral_ordinal_encoder', 'log_area']),
-        ('3', ['not_transformed', 'squared_coordinates', 'cadastral_ordinal_encoder_onehot']),
-        ('4', ['not_transformed', 'squared_coordinates', 'cadastral_ordinal_encoder']),
-        ('5', ['not_transformed', 'squared_coordinates', 'log_area']),
-        ('6', ['not_transformed', 'log_area']),
-        ('7', ['not_transformed', 'squared_coordinates']),
         ('all', None),
     ]
 
-    classifier_options = ['logistic_regression', 'gradient_boosting']
+    classifier_options = ['gradient_boosting']
 
-    min_samples_options = [500, 1000]
+    min_samples_options = [500]
 
-    max_samples_options = [5000, 9000]
-
-    data_type_options = ['balanced', 'imbalanced']
+    max_samples_options = [9000]
 
     for features in feature_options:
         for classifier in classifier_options:
             for min_samples in min_samples_options:
                 for max_samples in max_samples_options:
-                    for data_type in data_type_options:
-                        run_experiment(features=features[1],
-                                       features_comb_id=features[0],
-                                       classifier=classifier,
-                                       min_samples=min_samples,
-                                       max_samples=max_samples,
-                                       data_type=data_type)
+                    run_experiment(features=features[1],
+                                   features_comb_id=features[0],
+                                   classifier=classifier,
+                                   min_samples=min_samples,
+                                   max_samples=max_samples)
 
 
-def run_experiment(features, features_comb_id, classifier, min_samples, max_samples, data_type):
+def run_experiment(features, features_comb_id, classifier, min_samples, max_samples):
     logger = logging.getLogger(__name__)
     logger.info(
-        'Running Experiment data_type = {data_type} features={features_comb_id} classifier={classifier} samples=[{min_samples},{max_samples}]'.format(
-            data_type=data_type, features_comb_id=features_comb_id, classifier=classifier, min_samples=min_samples,
+        'Running Exp features={features_comb_id} classifier={classifier} samples=[{min_samples},{max_samples}]'.format(
+            features_comb_id=features_comb_id,
+            classifier=classifier,
+            min_samples=min_samples,
             max_samples=max_samples))
 
-    df_train = pd.read_csv(os.path.join('data/processed', 'train_data_{}.csv'.format(data_type)))
-    df_test = pd.read_csv(os.path.join('data/processed', 'test_data_{}.csv'.format(data_type)))
+    df_train = pd.read_csv(os.path.join('data/processed', 'train_data.csv'))
+    df_test = pd.read_csv(os.path.join('data/processed', 'test_data.csv'))
 
     model = SoilClassifier(feature_names=features,
                            classifier=classifier,
@@ -67,19 +57,12 @@ def run_experiment(features, features_comb_id, classifier, min_samples, max_samp
     model.evaluate(df_test, df_test[TARGET_FEATURE])
 
     model.dump(
-        'src/experiments/results/{data_type}_{features_comb_id}_{classifier}_{min_samples}_{max_samples}_scaled.pkl'.format(
-            data_type=data_type,
+        'src/experiments/results/minmax_{features_comb_id}_{classifier}_{min_samples}_{max_samples}_scaled.pkl'.format(
             features_comb_id=features_comb_id,
             classifier=classifier,
             min_samples=min_samples,
             max_samples=max_samples
         ))
-    # except Exception:
-    #     logger.error(
-    #         '''Exception Running Experiment data_type = {data_type}
-    #         features={features_comb_id} classifier={classifier} samples=[{min_samples},{max_samples}]'''.format(
-    #             data_type=data_type, features_comb_id=features[0], classifier=classifier, min_samples=min_samples,
-    #             max_samples=max_samples))
 
 
 if __name__ == '__main__':
